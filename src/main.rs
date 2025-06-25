@@ -1,4 +1,5 @@
-use axum::{Router, routing::get};
+use axum::{Router, response::Json, routing::get};
+use serde_json::{Value, json};
 
 #[tokio::main]
 async fn main() {
@@ -11,6 +12,6 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn root() -> &'static str {
-    "this is the root"
+async fn root() -> Json<Value> {
+    Json(json!({"message": "hello"}))
 }
