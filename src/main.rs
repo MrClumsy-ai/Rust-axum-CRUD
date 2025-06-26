@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct User {
-    id: u32,
+    id: Option<u32>,
     name: String,
 }
 
@@ -50,7 +50,7 @@ async fn connect_to_db(path: &str) -> Result<Connection, &str> {
     match conn.execute(
         "CREATE TABLE IF NOT EXISTS users (
              id INTEGER PRIMARY KEY,
-             name TEXT NOT NULL UNIQUE
+             name TEXT NOT NULL
          )",
         [],
     ) {
@@ -65,6 +65,7 @@ async fn root() -> Json<Value> {
 }
 
 async fn users(State(state): State<Arc<Mutex<AppState>>>) -> Json<Value> {
+    println!("GET /users");
     let state = match state.lock() {
         Ok(r) => r,
         Err(_e) => return Json(json!({"code": 500, "message": "error locking state"})),
@@ -76,8 +77,8 @@ async fn users(State(state): State<Arc<Mutex<AppState>>>) -> Json<Value> {
     let users_iter = match statement.query_map([], |row| {
         Ok(User {
             id: match row.get(0) {
-                Ok(id) => id,
-                Err(_e) => 0,
+                Ok(id) => Some(id),
+                Err(_e) => None,
             },
             name: match row.get(1) {
                 Ok(name) => name,
@@ -100,18 +101,74 @@ async fn users(State(state): State<Arc<Mutex<AppState>>>) -> Json<Value> {
     Json(json!({"users": users}))
 }
 
-async fn post_user(Json(data): Json<serde_json::Value>) -> Json<Value> {
-    Json(json!({"data": data}))
+async fn post_user(
+    State(state): State<Arc<Mutex<AppState>>>,
+    Json(data): Json<User>,
+) -> Json<Value> {
+    println!("POST /users");
+    println!("{:?}", data);
+    let state = match state.lock() {
+        Ok(r) => r,
+        Err(_e) => return Json(json!({"code": 500, "message": "error locking state"})),
+    };
+    println!("insert into users (name) values ({})", data.name);
+    match state
+        .db_connection
+        .execute("INSERT INTO users (name) VALUES (?1)", [data.name])
+    {
+        Ok(_) => (),
+        Err(_e) => {
+            return Json(json!({"code": 500, "message": "error executing insert"}));
+        }
+    };
+    let mut statement = match state
+        .db_connection
+        .prepare("SELECT * FROM users ORDER BY ROWID DESC LIMIT 1")
+    {
+        Ok(s) => s,
+        Err(_e) => return Json(json!({"code": 500, "message": "error preparing db request"})),
+    };
+    let users_iter = match statement.query_map([], |row| {
+        Ok(User {
+            id: match row.get(0) {
+                Ok(id) => Some(id),
+                Err(_e) => None,
+            },
+            name: match row.get(1) {
+                Ok(name) => name,
+                Err(_e) => "".to_string(),
+            },
+        })
+    }) {
+        Ok(r) => r,
+        Err(_e) => return Json(json!({"code": 500, "message": "error creating users_iter"})),
+    };
+    let mut user: User = User {
+        id: None,
+        name: "".to_string(),
+    };
+    for u in users_iter {
+        user = match u {
+            Ok(u) => u,
+            Err(_e) => {
+                return Json(json!({"code": 500, "message": "error iterating through users_iter"}));
+            }
+        };
+    }
+    Json(json!({"user": user}))
 }
 
 async fn user(Path(user_id): Path<u32>) -> Json<Value> {
+    println!("GET /users/{user_id}");
     Json(json!({"id": user_id}))
 }
 
 async fn put_user(Path(user_id): Path<u32>, Json(data): Json<serde_json::Value>) -> Json<Value> {
+    println!("GET /users/{user_id}");
     Json(json!({"id": user_id, "data": data}))
 }
 
 async fn delete_user(Path(user_id): Path<u32>) -> Json<Value> {
+    println!("GET /users/{user_id}");
     Json(json!({"id": user_id}))
 }
