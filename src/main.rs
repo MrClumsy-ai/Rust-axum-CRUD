@@ -158,17 +158,52 @@ async fn post_user(
     Json(json!({"user": user}))
 }
 
-async fn user(Path(user_id): Path<u32>) -> Json<Value> {
+async fn user(State(state): State<Arc<Mutex<AppState>>>, Path(user_id): Path<u32>) -> Json<Value> {
     println!("GET /users/{user_id}");
-    Json(json!({"id": user_id}))
+    let state = match state.lock() {
+        Ok(s) => s,
+        Err(_e) => return Json(json!({"code": 500, "message": "error locking state"})),
+    };
+    let id: Result<u32, rusqlite::Error> =
+        state
+            .db_connection
+            .query_one("select * from users where id = (?1)", [user_id], |r| {
+                r.get(0)
+            });
+    let name: Result<String, rusqlite::Error> =
+        state
+            .db_connection
+            .query_one("select * from users where id = (?1)", [user_id], |r| {
+                r.get(1)
+            });
+    let id = match id {
+        Ok(r) => r,
+        Err(e) => panic!("{e}"),
+    };
+    let name = match name {
+        Ok(n) => n,
+        Err(e) => panic!("{e}"),
+    };
+    let user = User {
+        id: Some(id),
+        name: name,
+    };
+    Json(json!({"user": user}))
 }
 
-async fn put_user(Path(user_id): Path<u32>, Json(data): Json<serde_json::Value>) -> Json<Value> {
+async fn put_user(
+    State(_state): State<Arc<Mutex<AppState>>>,
+    Path(user_id): Path<u32>,
+    Json(data): Json<serde_json::Value>,
+) -> Json<Value> {
     println!("GET /users/{user_id}");
     Json(json!({"id": user_id, "data": data}))
 }
 
-async fn delete_user(Path(user_id): Path<u32>) -> Json<Value> {
+async fn delete_user(
+    State(_state): State<Arc<Mutex<AppState>>>,
+    Path(user_id): Path<u32>,
+) -> Json<Value> {
     println!("GET /users/{user_id}");
     Json(json!({"id": user_id}))
 }
