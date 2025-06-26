@@ -65,15 +65,11 @@ async fn root() -> Json<Value> {
 }
 
 async fn users(State(state): State<Arc<Mutex<AppState>>>) -> Json<Value> {
-    println!("{:?}", state);
-    let app_state = match Arc::try_unwrap(state) {
-        Ok(m) => match m.into_inner() {
-            Ok(s) => s,
-            Err(_e) => return Json(json!({"code": 500, "message": "error unwrapping mutex"})),
-        },
-        Err(_e) => return Json(json!({"code": 500, "message": "error unwrapping arc"})),
+    let state = match state.lock() {
+        Ok(r) => r,
+        Err(_e) => return Json(json!({"code": 500, "message": "error locking state"})),
     };
-    let mut statement = match app_state.db_connection.prepare("SELECT * FROM users") {
+    let mut statement = match state.db_connection.prepare("SELECT * FROM users") {
         Ok(s) => s,
         Err(_e) => return Json(json!({"code": 500, "message": "error preparing db request"})),
     };
