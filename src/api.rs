@@ -1,18 +1,12 @@
 pub mod routes {
-    use std::sync::{Arc, Mutex};
-
+    use crate::database::connections;
+    use crate::models::models::{AppState, User};
     use axum::{
         Json,
         extract::{Path, State},
     };
-    use rusqlite::Connection;
     use serde_json::{Value, json};
-
-    use crate::{User, database::connections};
-
-    pub struct AppState {
-        pub db_connection: Connection,
-    }
+    use std::sync::{Arc, Mutex};
 
     pub async fn root() -> Json<Value> {
         Json(json!({"message": "this is the root route"}))

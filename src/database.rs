@@ -1,9 +1,8 @@
 pub mod connections {
+    use crate::models::models::{AppState, User};
+    use rusqlite::{Connection, Error};
     use std::sync::{Arc, Mutex};
 
-    use rusqlite::{Connection, Error};
-
-    use crate::{User, api::routes::AppState};
     pub async fn connect_to_db(path: &str) -> Result<Connection, &str> {
         let conn = match Connection::open(path) {
             Ok(c) => c,

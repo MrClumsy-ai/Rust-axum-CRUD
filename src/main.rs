@@ -1,4 +1,4 @@
-use crate::{api::routes, database::connections};
+use crate::{api::routes, database::connections, models::models::AppState};
 use axum::{Router, routing::get};
 use std::{
     panic,
@@ -7,12 +7,7 @@ use std::{
 
 mod api;
 mod database;
-
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct User {
-    id: Option<u32>,
-    name: String,
-}
+mod models;
 
 #[tokio::main]
 async fn main() {
@@ -20,7 +15,7 @@ async fn main() {
         Ok(c) => c,
         Err(e) => panic!("{e}"),
     };
-    let shared_state = Arc::new(Mutex::new(routes::AppState {
+    let shared_state = Arc::new(Mutex::new(AppState {
         db_connection: conn,
     }));
     let app = Router::new()
