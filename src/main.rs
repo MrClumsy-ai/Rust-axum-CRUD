@@ -4,6 +4,7 @@ use std::{
     panic,
     sync::{Arc, Mutex},
 };
+use tower_http::services::ServeDir;
 
 mod api;
 mod database;
@@ -11,6 +12,8 @@ mod models;
 
 #[tokio::main]
 async fn main() {
+    const LISTENING: &str = "localhost:8080";
+    let static_files = ServeDir::new("./static");
     let conn = match connections::connect_to_db("users.db").await {
         Ok(c) => c,
         Err(e) => panic!("{e}"),
@@ -27,9 +30,9 @@ async fn main() {
                 .put(routes::modify_user)
                 .delete(routes::delete_user),
         )
-        .with_state(shared_state);
-    let listener = tokio::net::TcpListener::bind("localhost:8080")
-        .await
-        .unwrap();
+        .with_state(shared_state)
+        .nest_service("/static", static_files);
+    let listener = tokio::net::TcpListener::bind(LISTENING).await.unwrap();
+    println!("listening: {LISTENING}");
     axum::serve(listener, app).await.unwrap();
 }
