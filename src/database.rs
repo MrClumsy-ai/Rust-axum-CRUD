@@ -6,7 +6,7 @@ pub mod connections {
     pub async fn connect_to_db(path: &str) -> Result<Connection, &str> {
         let conn = match Connection::open(path) {
             Ok(c) => c,
-            Err(_e) => return Err("error opening path"),
+            Err(_) => return Err("error opening path"),
         };
         return match conn.execute(
             "CREATE TABLE IF NOT EXISTS users (
@@ -16,7 +16,7 @@ pub mod connections {
             [],
         ) {
             Ok(_) => Ok(conn),
-            Err(_e) => Err("error creating table users"),
+            Err(_) => Err("error creating table users"),
         };
     }
 
