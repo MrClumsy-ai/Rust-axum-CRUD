@@ -6,7 +6,10 @@ use axum::{
 };
 use rusqlite::Connection;
 use serde_json::{Value, json};
-use std::sync::{Arc, Mutex};
+use std::{
+    panic,
+    sync::{Arc, Mutex},
+};
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct User {
@@ -164,31 +167,40 @@ async fn user(State(state): State<Arc<Mutex<AppState>>>, Path(user_id): Path<u32
         Ok(s) => s,
         Err(_e) => return Json(json!({"code": 500, "message": "error locking state"})),
     };
-    let id: Result<u32, rusqlite::Error> =
-        state
-            .db_connection
-            .query_one("select * from users where id = (?1)", [user_id], |r| {
-                r.get(0)
-            });
-    let name: Result<String, rusqlite::Error> =
-        state
-            .db_connection
-            .query_one("select * from users where id = (?1)", [user_id], |r| {
-                r.get(1)
-            });
-    let id = match id {
+    let mut statement = match state
+        .db_connection
+        .prepare("select * from users where id = (?1)")
+    {
+        Ok(s) => s,
+        Err(_e) => panic!("{_e}"),
+    };
+    let users_iter = match statement.query_map([user_id], |r| {
+        Ok(User {
+            id: match r.get(0) {
+                Ok(i) => Some(i),
+                Err(_) => None,
+            },
+            name: match r.get(1) {
+                Ok(n) => n,
+                Err(_) => "".to_string(),
+            },
+        })
+    }) {
         Ok(r) => r,
         Err(e) => panic!("{e}"),
     };
-    let name = match name {
-        Ok(n) => n,
-        Err(e) => panic!("{e}"),
-    };
-    let user = User {
-        id: Some(id),
-        name: name,
-    };
-    Json(json!({"user": user}))
+    let mut users: Vec<User> = Vec::new();
+    for u in users_iter {
+        users.push(match u {
+            Ok(r) => r,
+            Err(e) => panic!("{e}"),
+        });
+        break;
+    }
+    if users.len() == 0{
+        return Json(json!({"code": 404, "message": "user not found"}))
+    }
+    Json(json!({"user": users[0]}))
 }
 
 async fn put_user(
