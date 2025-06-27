@@ -15,8 +15,7 @@ $(document).ready(() => {
       data: JSON.stringify({ name: fname }),
       contentType: "application/json",
     })
-      .done((response) => {
-        console.log(response);
+      .done((_) => {
         window.location.href = URL + "/static/home/index.html";
       })
       .fail((_, status, message) =>
