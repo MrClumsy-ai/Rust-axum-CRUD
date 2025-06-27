@@ -8,17 +8,16 @@ pub mod connections {
             Ok(c) => c,
             Err(_e) => return Err("error opening path"),
         };
-        match conn.execute(
+        return match conn.execute(
             "CREATE TABLE IF NOT EXISTS users (
              id INTEGER PRIMARY KEY,
              name TEXT NOT NULL
          )",
             [],
         ) {
-            Ok(_) => (),
-            Err(_e) => return Err("error creating table users"),
+            Ok(_) => Ok(conn),
+            Err(_e) => Err("error creating table users"),
         };
-        Ok(conn)
     }
 
     pub async fn get_all_users(state: Arc<Mutex<AppState>>) -> Result<Vec<User>, Error> {
@@ -78,11 +77,11 @@ pub mod connections {
             Ok(User {
                 id: match row.get(0) {
                     Ok(id) => Some(id),
-                    Err(_e) => None,
+                    Err(_) => None,
                 },
                 name: match row.get(1) {
                     Ok(name) => name,
-                    Err(_e) => "".to_string(),
+                    Err(_) => "".to_string(),
                 },
             })
         }) {
@@ -112,28 +111,28 @@ pub mod connections {
             .prepare("SELECT * FROM users WHERE id=(?1)")
         {
             Ok(s) => s,
-            Err(_e) => panic!("{_e}"),
+            Err(e) => return Err(e),
         };
         let users_iter = match statement.query_map([user_id], |r| {
             Ok(User {
                 id: match r.get(0) {
-                    Ok(i) => Some(i),
+                    Ok(id) => Some(id),
                     Err(_) => None,
                 },
                 name: match r.get(1) {
-                    Ok(n) => n,
+                    Ok(name) => name,
                     Err(_) => "".to_string(),
                 },
             })
         }) {
             Ok(r) => r,
-            Err(e) => panic!("{e}"),
+            Err(e) => return Err(e),
         };
         let mut users: Vec<User> = Vec::new();
         for u in users_iter {
             users.push(match u {
                 Ok(r) => r,
-                Err(e) => panic!("{e}"),
+                Err(e) => return Err(e),
             });
             break;
         }
@@ -176,11 +175,11 @@ pub mod connections {
             Ok(User {
                 id: match row.get(0) {
                     Ok(id) => Some(id),
-                    Err(_e) => None,
+                    Err(_) => None,
                 },
                 name: match row.get(1) {
                     Ok(name) => name,
-                    Err(_e) => "".to_string(),
+                    Err(_) => "".to_string(),
                 },
             })
         }) {
