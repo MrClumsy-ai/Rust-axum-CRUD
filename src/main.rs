@@ -20,11 +20,11 @@ async fn main() {
     }));
     let app = Router::new()
         .route("/", get(routes::root))
-        .route("/users", get(routes::users).post(routes::post_user))
+        .route("/users", get(routes::get_users).post(routes::post_user))
         .route(
             "/users/{user_id}",
-            get(routes::user)
-                .put(routes::put_user)
+            get(routes::get_user_by_id)
+                .put(routes::modify_user)
                 .delete(routes::delete_user),
         )
         .with_state(shared_state);

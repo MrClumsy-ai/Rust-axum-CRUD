@@ -9,10 +9,11 @@ pub mod routes {
     use std::sync::{Arc, Mutex};
 
     pub async fn root() -> Json<Value> {
+        println!("GET /");
         Json(json!({"message": "this is the root route"}))
     }
 
-    pub async fn users(State(state): State<Arc<Mutex<AppState>>>) -> Json<Value> {
+    pub async fn get_users(State(state): State<Arc<Mutex<AppState>>>) -> Json<Value> {
         println!("GET /users");
         let users = match connections::get_all_users(state).await {
             Ok(r) => r,
@@ -21,49 +22,19 @@ pub mod routes {
         Json(json!({"users": users}))
     }
 
-    pub async fn user(
+    pub async fn get_user_by_id(
         State(state): State<Arc<Mutex<AppState>>>,
         Path(user_id): Path<u32>,
     ) -> Json<Value> {
         println!("GET /users/{user_id}");
-        let state = match state.lock() {
-            Ok(s) => s,
-            Err(_e) => return Json(json!({"code": 500, "message": "error locking state"})),
-        };
-        let mut statement = match state
-            .db_connection
-            .prepare("select * from users where id = (?1)")
-        {
-            Ok(s) => s,
-            Err(_e) => panic!("{_e}"),
-        };
-        let users_iter = match statement.query_map([user_id], |r| {
-            Ok(User {
-                id: match r.get(0) {
-                    Ok(i) => Some(i),
-                    Err(_) => None,
-                },
-                name: match r.get(1) {
-                    Ok(n) => n,
-                    Err(_) => "".to_string(),
-                },
-            })
-        }) {
-            Ok(r) => r,
+        let user = match connections::get_user_by_id(state, user_id).await {
+            Ok(u) => u,
             Err(e) => panic!("{e}"),
         };
-        let mut users: Vec<User> = Vec::new();
-        for u in users_iter {
-            users.push(match u {
-                Ok(r) => r,
-                Err(e) => panic!("{e}"),
-            });
-            break;
-        }
-        if users.len() == 0 {
+        if user.id == None {
             return Json(json!({"code": 404, "message": "user not found"}));
         }
-        Json(json!({"user": users[0]}))
+        Json(json!({"user": user}))
     }
 
     pub async fn post_user(
@@ -79,12 +50,13 @@ pub mod routes {
         Json(json!({"user": user}))
     }
 
-    pub async fn put_user(
+    pub async fn modify_user(
         State(_state): State<Arc<Mutex<AppState>>>,
         Path(user_id): Path<u32>,
         Json(data): Json<serde_json::Value>,
     ) -> Json<Value> {
         println!("GET /users/{user_id}");
+        // TODO: database modify_user(state, user_id, data)
         Json(json!({"id": user_id, "data": data}))
     }
 
@@ -93,6 +65,7 @@ pub mod routes {
         Path(user_id): Path<u32>,
     ) -> Json<Value> {
         println!("GET /users/{user_id}");
+        // TODO: database delete_user(state, user_id)
         Json(json!({"id": user_id}))
     }
 }

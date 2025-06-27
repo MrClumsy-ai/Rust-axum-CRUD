@@ -101,4 +101,50 @@ pub mod connections {
         }
         Ok(user)
     }
+    pub async fn get_user_by_id(state: Arc<Mutex<AppState>>, user_id: u32) -> Result<User, Error> {
+        let state = match state.lock() {
+            Ok(s) => s,
+            Err(_) => return Err(Error::UnwindingPanic),
+        };
+        let mut statement = match state
+            .db_connection
+            .prepare("select * from users where id = (?1)")
+        {
+            Ok(s) => s,
+            Err(_e) => panic!("{_e}"),
+        };
+        let users_iter = match statement.query_map([user_id], |r| {
+            Ok(User {
+                id: match r.get(0) {
+                    Ok(i) => Some(i),
+                    Err(_) => None,
+                },
+                name: match r.get(1) {
+                    Ok(n) => n,
+                    Err(_) => "".to_string(),
+                },
+            })
+        }) {
+            Ok(r) => r,
+            Err(e) => panic!("{e}"),
+        };
+        let mut users: Vec<User> = Vec::new();
+        for u in users_iter {
+            users.push(match u {
+                Ok(r) => r,
+                Err(e) => panic!("{e}"),
+            });
+            break;
+        }
+        if users.len() == 0 {
+            return Ok(User {
+                id: None,
+                name: "".to_string(),
+            });
+        }
+        Ok(User {
+            id: users[0].id,
+            name: users[0].name.clone(),
+        })
+    }
 }
