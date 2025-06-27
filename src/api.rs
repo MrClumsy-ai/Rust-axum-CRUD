@@ -27,19 +27,6 @@ pub mod routes {
         Json(json!({"users": users}))
     }
 
-    pub async fn post_user(
-        State(state): State<Arc<Mutex<AppState>>>,
-        Json(data): Json<User>,
-    ) -> Json<Value> {
-        println!("POST /users");
-        println!("{:?}", data);
-        let user = match connections::post_user(state, data).await {
-            Ok(u) => u,
-            Err(e) => panic!("{e}"),
-        };
-        Json(json!({"user": user}))
-    }
-
     pub async fn user(
         State(state): State<Arc<Mutex<AppState>>>,
         Path(user_id): Path<u32>,
@@ -83,6 +70,19 @@ pub mod routes {
             return Json(json!({"code": 404, "message": "user not found"}));
         }
         Json(json!({"user": users[0]}))
+    }
+
+    pub async fn post_user(
+        State(state): State<Arc<Mutex<AppState>>>,
+        Json(data): Json<User>,
+    ) -> Json<Value> {
+        println!("POST /users");
+        println!("{:?}", data);
+        let user = match connections::post_user(state, data).await {
+            Ok(u) => u,
+            Err(e) => panic!("{e}"),
+        };
+        Json(json!({"user": user}))
     }
 
     pub async fn put_user(
