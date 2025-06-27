@@ -51,13 +51,17 @@ pub mod routes {
     }
 
     pub async fn modify_user(
-        State(_state): State<Arc<Mutex<AppState>>>,
+        State(state): State<Arc<Mutex<AppState>>>,
         Path(user_id): Path<u32>,
-        Json(data): Json<serde_json::Value>,
+        Json(data): Json<User>,
     ) -> Json<Value> {
         println!("GET /users/{user_id}");
         // TODO: database modify_user(state, user_id, data)
-        Json(json!({"id": user_id, "data": data}))
+        let user = match connections::modify_user(state, user_id, data).await {
+            Ok(u) => u,
+            Err(e) => panic!("{e}"),
+        };
+        Json(json!({"user": user}))
     }
 
     pub async fn delete_user(

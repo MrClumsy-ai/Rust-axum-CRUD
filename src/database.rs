@@ -1,6 +1,6 @@
 pub mod connections {
     use crate::models::models::{AppState, User};
-    use rusqlite::{Connection, Error};
+    use rusqlite::{Connection, Error, params};
     use std::sync::{Arc, Mutex};
 
     pub async fn connect_to_db(path: &str) -> Result<Connection, &str> {
@@ -101,6 +101,7 @@ pub mod connections {
         }
         Ok(user)
     }
+
     pub async fn get_user_by_id(state: Arc<Mutex<AppState>>, user_id: u32) -> Result<User, Error> {
         let state = match state.lock() {
             Ok(s) => s,
@@ -108,7 +109,7 @@ pub mod connections {
         };
         let mut statement = match state
             .db_connection
-            .prepare("select * from users where id = (?1)")
+            .prepare("SELECT * FROM users WHERE id=(?1)")
         {
             Ok(s) => s,
             Err(_e) => panic!("{_e}"),
@@ -146,5 +147,56 @@ pub mod connections {
             id: users[0].id,
             name: users[0].name.clone(),
         })
+    }
+
+    pub async fn modify_user(
+        state: Arc<Mutex<AppState>>,
+        user_id: u32,
+        user: User,
+    ) -> Result<User, Error> {
+        let state = match state.lock() {
+            Ok(s) => s,
+            Err(_) => return Err(Error::UnwindingPanic),
+        };
+        match state.db_connection.execute(
+            "update users set name = (?1) where id=(?2)",
+            params![user.name, user_id],
+        ) {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        };
+        let mut statement = match state
+            .db_connection
+            .prepare("SELECT * FROM users WHERE id=(?1)")
+        {
+            Ok(s) => s,
+            Err(e) => return Err(e),
+        };
+        let users_iter = match statement.query_map([user_id], |row| {
+            Ok(User {
+                id: match row.get(0) {
+                    Ok(id) => Some(id),
+                    Err(_e) => None,
+                },
+                name: match row.get(1) {
+                    Ok(name) => name,
+                    Err(_e) => "".to_string(),
+                },
+            })
+        }) {
+            Ok(r) => r,
+            Err(e) => return Err(e),
+        };
+        let mut user: User = User {
+            id: None,
+            name: "".to_string(),
+        };
+        for u in users_iter {
+            user = match u {
+                Ok(u) => u,
+                Err(e) => return Err(e),
+            };
+        }
+        Ok(user)
     }
 }
