@@ -64,11 +64,14 @@ pub mod routes {
     }
 
     pub async fn delete_user(
-        State(_state): State<Arc<Mutex<AppState>>>,
+        State(state): State<Arc<Mutex<AppState>>>,
         Path(user_id): Path<u32>,
     ) -> Json<Value> {
         println!("GET /users/{user_id}");
-        // TODO: database delete_user(state, user_id)
-        Json(json!({"id": user_id}))
+        let user = match connections::delete_user(state, user_id).await {
+            Ok(u) => u,
+            Err(e) => panic!("{e}"),
+        };
+        Json(json!({"user": user}))
     }
 }

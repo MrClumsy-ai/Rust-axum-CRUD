@@ -199,4 +199,22 @@ pub mod connections {
         }
         Ok(user)
     }
+
+    pub async fn delete_user(state: Arc<Mutex<AppState>>, user_id: u32) -> Result<User, Error> {
+        let user = match get_user_by_id(state.clone(), user_id).await {
+            Ok(u) => u,
+            Err(e) => return Err(e),
+        };
+        let state = match state.lock() {
+            Ok(s) => s,
+            Err(_) => return Err(Error::UnwindingPanic),
+        };
+        return match state
+            .db_connection
+            .execute("DELETE FROM users WHERE id=(?1)", [user_id])
+        {
+            Ok(_) => Ok(user),
+            Err(e) => Err(e),
+        };
+    }
 }
