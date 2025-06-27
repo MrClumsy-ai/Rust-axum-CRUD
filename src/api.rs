@@ -19,7 +19,7 @@ pub mod routes {
             Ok(r) => r,
             Err(e) => panic!("{e}"),
         };
-        Json(json!({"users": users}))
+        Json(json!({"title": "Users page", "users": users}))
     }
 
     pub async fn get_user_by_id(
