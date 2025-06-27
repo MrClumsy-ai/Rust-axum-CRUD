@@ -3,7 +3,7 @@ const URL = "http://localhost:8080";
 $(document).ready(() => {
   $("#user-form").submit((event) => {
     event.preventDefault();
-    let fname = $("#user-name").val();
+    let fname = $("#user-name").val().trim();
     if (fname === "") {
       $("#form-error").text("no name provided");
       return;
