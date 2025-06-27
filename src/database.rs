@@ -25,11 +25,8 @@ pub mod connections {
             Ok(r) => r,
             Err(_) => return Err(Error::UnwindingPanic),
         };
-        let mut statement = match state.db_connection.prepare("SELECT * FROM users") {
-            Ok(s) => s,
-            Err(e) => return Err(e),
-        };
-        let users_iter = match statement.query_map([], |row| {
+        let mut statement = state.db_connection.prepare("SELECT * FROM users")?;
+        let users_iter = statement.query_map([], |row| {
             Ok(User {
                 id: match row.get(0) {
                     Ok(id) => Some(id),
@@ -40,16 +37,10 @@ pub mod connections {
                     Err(e) => return Err(e),
                 },
             })
-        }) {
-            Ok(r) => r,
-            Err(e) => return Err(e),
-        };
+        })?;
         let mut users: Vec<User> = Vec::new();
         for user in users_iter {
-            users.push(match user {
-                Ok(u) => u,
-                Err(e) => return Err(e),
-            });
+            users.push(user?);
         }
         Ok(users)
     }
@@ -59,21 +50,13 @@ pub mod connections {
             Ok(s) => s,
             Err(_) => return Err(Error::UnwindingPanic),
         };
-        match state
+        state
             .db_connection
-            .execute("INSERT INTO users (name) VALUES (?1)", [user.name])
-        {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        };
-        let mut statement = match state
+            .execute("INSERT INTO users (name) VALUES (?1)", [user.name])?;
+        let mut statement = state
             .db_connection
-            .prepare("SELECT * FROM users ORDER BY ROWID DESC LIMIT 1")
-        {
-            Ok(s) => s,
-            Err(e) => return Err(e),
-        };
-        let users_iter = match statement.query_map([], |row| {
+            .prepare("SELECT * FROM users ORDER BY ROWID DESC LIMIT 1")?;
+        let users_iter = statement.query_map([], |row| {
             Ok(User {
                 id: match row.get(0) {
                     Ok(id) => Some(id),
@@ -84,19 +67,13 @@ pub mod connections {
                     Err(_) => "".to_string(),
                 },
             })
-        }) {
-            Ok(r) => r,
-            Err(e) => return Err(e),
-        };
+        })?;
         let mut user: User = User {
             id: None,
             name: "".to_string(),
         };
         for u in users_iter {
-            user = match u {
-                Ok(u) => u,
-                Err(e) => return Err(e),
-            };
+            user = u?;
         }
         Ok(user)
     }
@@ -106,14 +83,10 @@ pub mod connections {
             Ok(s) => s,
             Err(_) => return Err(Error::UnwindingPanic),
         };
-        let mut statement = match state
+        let mut statement = state
             .db_connection
-            .prepare("SELECT * FROM users WHERE id=(?1)")
-        {
-            Ok(s) => s,
-            Err(e) => return Err(e),
-        };
-        let users_iter = match statement.query_map([user_id], |r| {
+            .prepare("SELECT * FROM users WHERE id=(?1)")?;
+        let users_iter = statement.query_map([user_id], |r| {
             Ok(User {
                 id: match r.get(0) {
                     Ok(id) => Some(id),
@@ -124,16 +97,10 @@ pub mod connections {
                     Err(_) => "".to_string(),
                 },
             })
-        }) {
-            Ok(r) => r,
-            Err(e) => return Err(e),
-        };
+        })?;
         let mut users: Vec<User> = Vec::new();
         for u in users_iter {
-            users.push(match u {
-                Ok(r) => r,
-                Err(e) => return Err(e),
-            });
+            users.push(u?);
             break;
         }
         if users.len() == 0 {
@@ -157,21 +124,14 @@ pub mod connections {
             Ok(s) => s,
             Err(_) => return Err(Error::UnwindingPanic),
         };
-        match state.db_connection.execute(
+        state.db_connection.execute(
             "update users set name = (?1) where id=(?2)",
             params![user.name, user_id],
-        ) {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        };
-        let mut statement = match state
+        )?;
+        let mut statement = state
             .db_connection
-            .prepare("SELECT * FROM users WHERE id=(?1)")
-        {
-            Ok(s) => s,
-            Err(e) => return Err(e),
-        };
-        let users_iter = match statement.query_map([user_id], |row| {
+            .prepare("SELECT * FROM users WHERE id=(?1)")?;
+        let users_iter = statement.query_map([user_id], |row| {
             Ok(User {
                 id: match row.get(0) {
                     Ok(id) => Some(id),
@@ -182,28 +142,19 @@ pub mod connections {
                     Err(_) => "".to_string(),
                 },
             })
-        }) {
-            Ok(r) => r,
-            Err(e) => return Err(e),
-        };
+        })?;
         let mut user: User = User {
             id: None,
             name: "".to_string(),
         };
         for u in users_iter {
-            user = match u {
-                Ok(u) => u,
-                Err(e) => return Err(e),
-            };
+            user = u?;
         }
         Ok(user)
     }
 
     pub async fn delete_user(state: Arc<Mutex<AppState>>, user_id: u32) -> Result<User, Error> {
-        let user = match get_user_by_id(state.clone(), user_id).await {
-            Ok(u) => u,
-            Err(e) => return Err(e),
-        };
+        let user = get_user_by_id(state.clone(), user_id).await?;
         let state = match state.lock() {
             Ok(s) => s,
             Err(_) => return Err(Error::UnwindingPanic),
