@@ -56,7 +56,6 @@ pub mod routes {
         Json(data): Json<User>,
     ) -> Json<Value> {
         println!("GET /users/{user_id}");
-        // TODO: database modify_user(state, user_id, data)
         let user = match connections::modify_user(state, user_id, data).await {
             Ok(u) => u,
             Err(e) => panic!("{e}"),
