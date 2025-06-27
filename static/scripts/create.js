@@ -16,7 +16,7 @@ $(document).ready(() => {
       contentType: "application/json",
     })
       .done((_) => {
-        window.location.href = URL + "/static/home/index.html";
+        window.location.href = URL + "/static/home.html";
       })
       .fail((_, status, message) =>
         console.log(`status: ${status}\nmessage: ${message}`),

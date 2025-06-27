@@ -7,8 +7,8 @@ $(document).ready(() => {
         <tr>
           <td ${user.id}>${user.name}</td>
           <td>
-            <a class="btn btn-warning mx-2" href="../edit/index.html">edit</a>
-            <a class="btn btn-danger mx-2" href="../delete/index.html">delete</a>
+            <a class="btn btn-warning mx-2" href="edit.html">edit</a>
+            <a class="btn btn-danger mx-2" href="delete.html">delete</a>
           </td>
         </tr>
       `;
