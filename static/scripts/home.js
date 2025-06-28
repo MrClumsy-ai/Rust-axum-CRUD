@@ -26,10 +26,10 @@ $(document).ready(() => {
       let id = btnId[1];
       switch (action) {
         case "edit":
-          console.log("this is editing");
+          window.location = "/static/edit.html?id=" + encodeURIComponent(id);
           break;
         case "delete":
-          console.log("this is deleting lole");
+          window.location = "/static/delete.html?id=" + encodeURIComponent(id);
           break;
         default:
           console.log("error... guh??");
