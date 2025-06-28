@@ -2,17 +2,13 @@ const ID = new URLSearchParams(window.location.search).get("id");
 const URL = "http://localhost:8080";
 
 $(document).ready(function () {
-  console.log(ID);
-  let username;
-  $.get(`${URL}/users/${ID}`, function (data, status) {
+  $.get(`${URL}/users/${ID}`, (data, status) => {
     console.info(`status: ${status}`);
     if (status != "success") {
       console.log("something went wrong...");
       return;
     }
-    username = data.user.name;
-    console.log(username);
-    $("#user-name").val(username);
+    $("#user-name").val(data.user.name);
   });
 
   $("#user-form").submit((event) => {
@@ -30,7 +26,7 @@ $(document).ready(function () {
       contentType: "application/json",
     })
       .done((_) => {
-        window.location.href = URL + "/static/home.html";
+        window.location.href = `${URL}/static/home.html`;
       })
       .fail((_, status, message) =>
         console.log(`status: ${status}\nmessage: ${message}`),

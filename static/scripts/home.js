@@ -1,15 +1,15 @@
 const URL = "http://localhost:8080";
 
 $(document).ready(() => {
-  $.get(URL + "/users", function (data, status) {
+  $.get(URL + "/users", (data, status) => {
     console.info(`status: ${status}`);
     if (status != "success") {
-      console.log("something went wrong...");
+      console.log(`Something went wrong: ${status}`);
       return;
     }
     $("#title").text(data.title);
-    data.users.forEach(function (user) {
-      let txt = `
+    data.users.forEach((user) => {
+      $("#users-container").append(`
         <tr>
           <td>${user.name}</td>
           <td>
@@ -17,8 +17,7 @@ $(document).ready(() => {
             <button class="btn btn-danger mx-2 action" id="delete-${user.id}" href="#">delete</button>
           </td>
         </tr>
-      `;
-      $("#users-container").append(txt);
+      `);
     });
     $(".action").click(function () {
       let btnId = $(this).closest("button").attr("id").split("-");
@@ -26,10 +25,12 @@ $(document).ready(() => {
       let id = btnId[1];
       switch (action) {
         case "edit":
-          window.location = "/static/edit.html?id=" + encodeURIComponent(id);
+          window.location =
+            `${URL}/static/edit.html?id=` + encodeURIComponent(id);
           break;
         case "delete":
-          window.location = "/static/delete.html?id=" + encodeURIComponent(id);
+          window.location =
+            `${URL}/static/delete.html?id=` + encodeURIComponent(id);
           break;
         default:
           console.log("error... guh??");

@@ -10,13 +10,13 @@ $(document).ready(() => {
     }
     $("#form-error").text("");
     $.ajax({
-      url: URL + "/users",
+      url: `${URL}/users`,
       method: "POST",
       data: JSON.stringify({ name: fname }),
       contentType: "application/json",
     })
       .done((_) => {
-        window.location.href = URL + "/static/home.html";
+        window.location.href = `${URL}/static/home.html`;
       })
       .fail((_, status, message) =>
         console.log(`status: ${status}\nmessage: ${message}`),
