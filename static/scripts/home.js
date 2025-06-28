@@ -13,8 +13,8 @@ $(document).ready(() => {
         <tr>
           <td>${user.name}</td>
           <td>
-            <button class="btn btn-warning mx-2 action" id="edit-${user.id}" href="#">edit</button>
-            <button class="btn btn-danger mx-2 action" id="delete-${user.id}" href="#">delete</button>
+            <button class="btn btn-warning mx-2 action" id="edit-${user.id}" href="#">Edit</button>
+            <button class="btn btn-danger mx-2 action" id="delete-${user.id}" href="#">Delete</button>
           </td>
         </tr>
       `);
